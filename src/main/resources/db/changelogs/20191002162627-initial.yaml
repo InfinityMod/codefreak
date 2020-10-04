@@ -433,4 +433,3 @@ databaseChangeLog:
             referencedColumnNames: id
             referencedTableName: user
             validate: true
-

@@ -12,6 +12,7 @@ import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
 import org.springframework.validation.annotation.Validated
 
+
 @Component("config")
 @ConfigurationProperties(prefix = "codefreak")
 @Validated
@@ -30,6 +31,12 @@ class AppConfiguration {
   val lti = Lti()
   val evaluation = Evaluation()
   val gitImport = GitImport()
+  val authorities = Authorities()
+
+
+  class Authorities {
+    var oAuth2: Map<String, Role> = mapOf()
+  }
 
   enum class ReverseProxyType {
     TRAEFIK, PUBLISH
@@ -76,6 +83,8 @@ class AppConfiguration {
      * 0 means no limit
      */
     var cpus = 0L
+
+    var mounts: Map<String, Pair<String, Boolean>> = mapOf()
 
     /**
      * Name of the network the container will be attached to

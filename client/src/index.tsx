@@ -16,19 +16,24 @@ import './index.css'
 import { extractErrorMessage } from './services/codefreak-api'
 import { messageService } from './services/message'
 import * as serviceWorker from './serviceWorker'
+import { createBrowserHistory } from 'history';
 
-const httpLink = createUploadLink({ uri: '/graphql', credentials: 'include' })
+const httpLink = createUploadLink({ uri: `${process.env.REACT_APP_PUBLIC_URI}/graphql`, credentials: 'include' })
 
 const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
 
 const wsLink = new WebSocketLink({
-  uri: `${wsProtocol}//${window.location.host}/subscriptions`,
+  uri: `${wsProtocol}//${window.location.host}${process.env.REACT_APP_PUBLIC_URI}/subscriptions`,
   options: {
     reconnect: true,
     connectionParams: {
       credentials: 'include'
     }
   }
+})
+
+export const history = createBrowserHistory({
+  basename: process.env.REACT_APP_PUBLIC_URI
 })
 
 // Based on https://github.com/apollographql/apollo-link/issues/197#issuecomment-363387875

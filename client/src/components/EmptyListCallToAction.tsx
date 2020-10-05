@@ -25,7 +25,7 @@ const EmptyListCallToAction: React.FC<{ title?: string }> = ({
         ) : null}
         <span style={{ fontSize: 30, color: '#001529' }}>{children}</span>
       </div>
-      <img alt="" src={process.env.PUBLIC_URL + '/arrow-top-right.png'} />
+      <img alt="" src={process.env.REACT_APP_PUBLIC_URI + '/arrow-top-right.png'} />
     </div>
   )
 }

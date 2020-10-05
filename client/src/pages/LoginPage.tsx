@@ -17,7 +17,7 @@ interface LoginProps extends FormComponentProps<Credentials> {
   onSuccessfulLogin: (user: AuthenticatedUser) => void
 }
 
-const oAuthForms: Boolean =  true
+const oAuthForms: Boolean = true
 
 const LoginPage: React.FC<LoginProps> = (props) => {
   const { getFieldDecorator } = props.form
@@ -43,9 +43,9 @@ const LoginPage: React.FC<LoginProps> = (props) => {
   const routeChange = (e: React.FormEvent) => {
     e.preventDefault()
     let history = createBrowserHistory();
-    let path: string = `${process.env.PUBLIC_URL}/oauth2/authorization/auth0`;
+    let path: string = `${process.env.REACT_APP_PUBLIC_URI}/oauth2/authorization/hydra`;
     history.push(path);
-    window.location.href  = path;
+    window.location.href = path;
   }
 
   var oAuthLogin = (
@@ -59,8 +59,7 @@ const LoginPage: React.FC<LoginProps> = (props) => {
     </Button>
   )
 
-  if (oAuthForms === false)
-  {
+  if (oAuthForms === false) {
     oAuthLogin = (<div></div>)
   }
 

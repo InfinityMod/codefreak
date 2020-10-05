@@ -83,14 +83,14 @@ const App: React.FC<{ onUserChanged?: () => void }> = props => {
   return (
     <ServerTimeOffsetProvider value={timeOffset}>
       <AuthenticatedUserContext.Provider value={authenticatedUser}>
-        <Router>
+        <Router basename={`${process.env.REACT_APP_PUBLIC_URI}/`}>
           <ScrollToHash />
           <Switch>
-            <Route exact path="/">
-              <Redirect to="/assignments" />
+            <Route exact path={`${process.env.REACT_APP_PUBLIC_URI}/`}>
+              <Redirect to={`${process.env.REACT_APP_PUBLIC_URI}/assignments/`} />
             </Route>
-            <Route path="/ide/:type/:id" component={IdePage} />
-            <Route path="/lti" component={LtiPage} />
+            <Route path={`${process.env.REACT_APP_PUBLIC_URI}/ide/:type/:id`} component={IdePage} />
+            <Route path={`${process.env.REACT_APP_PUBLIC_URI}/lti`} component={LtiPage} />
             {routes.map(renderRoute(logout))}
             <DefaultLayout logout={logout}>
               <Route component={NotFoundPage} />

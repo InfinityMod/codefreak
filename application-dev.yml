@@ -71,6 +71,7 @@ codefreak:
   instanceId: default
   authorities:
     oAuth2:
+      # Authority management of oAuth2 to define admin and teacher accounts
       '[foo@bar.com]': admin
   files:
     adapter: jpa

@@ -23,7 +23,7 @@ const TaskPoolPage: React.FC = () => {
     <>
       <PageHeaderWrapper
         extra={
-          <Link to="/tasks/pool/create">
+          <Link to={`/tasks/pool/create`}>
             <Button type="primary" icon="plus">
               Create Task
             </Button>

@@ -14,23 +14,23 @@ const HelpPage: React.FC = () => {
       {onlyShowBasics ? (
         <BasicHelpPage noHeader />
       ) : (
-        <>
-          <Card title="General" style={{ marginBottom: 16 }}>
-            <ul style={{ marginBottom: 0 }}>
-              <li>
-                <Link to="/help/basics">Basics</Link>
-              </li>
-            </ul>
-          </Card>
-          <Card title="For teachers" style={{ marginBottom: 16 }}>
-            <ul style={{ marginBottom: 0 }}>
-              <li>
-                <Link to="/help/definitions">Definition Files</Link>
-              </li>
-            </ul>
-          </Card>
-        </>
-      )}
+          <>
+            <Card title="General" style={{ marginBottom: 16 }}>
+              <ul style={{ marginBottom: 0 }}>
+                <li>
+                  <Link to={`${process.env.REACT_APP_PUBLIC_URI}/help/basics`}>Basics</Link>
+                </li>
+              </ul>
+            </Card>
+            <Card title="For teachers" style={{ marginBottom: 16 }}>
+              <ul style={{ marginBottom: 0 }}>
+                <li>
+                  <Link to={`${process.env.REACT_APP_PUBLIC_URI}/help/definitions`}>Definition Files</Link>
+                </li>
+              </ul>
+            </Card>
+          </>
+        )}
     </>
   )
 }

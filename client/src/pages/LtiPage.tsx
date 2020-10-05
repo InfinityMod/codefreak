@@ -9,8 +9,8 @@ const LtiPage: React.FC = () => {
   return (
     <EmbeddedLayout>
       <Switch>
-        <Route path="/lti/deep-link" component={DeepLinkPage} />
-        <Route path="/lti/launch/:id" component={LaunchPage} />
+        <Route path={`${process.env.REACT_APP_PUBLIC_URI}/lti/deep-link`} component={DeepLinkPage} />
+        <Route path={`${process.env.REACT_APP_PUBLIC_URI}//lti/launch/:id`} component={LaunchPage} />
         <Route>
           <NotFoundPage />
         </Route>

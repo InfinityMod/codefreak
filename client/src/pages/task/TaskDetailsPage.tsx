@@ -105,8 +105,8 @@ const TaskDetailsPage: React.FC<{ editable: boolean }> = ({ editable }) => {
       {task.body ? (
         <ReactMarkdown source={task.body} />
       ) : (
-        <Empty description="This task has no extra instructions. Take a look at the provided files." />
-      )}
+          <Empty description="This task has no extra instructions. Take a look at the provided files." />
+        )}
     </Card>
   )
 
@@ -148,8 +148,8 @@ const TaskDetailsPage: React.FC<{ editable: boolean }> = ({ editable }) => {
               onSave={updater('body')}
             />
           ) : (
-            <Empty description="This task has no extra instructions. Take a look at the provided files." />
-          )}
+              <Empty description="This task has no extra instructions. Take a look at the provided files." />
+            )}
         </Card>
         <Card title="Files" style={{ marginTop: 16 }}>
           {assignmentOpen ? (
@@ -183,7 +183,7 @@ const TaskDetailsPage: React.FC<{ editable: boolean }> = ({ editable }) => {
           ) : null}
           <p>
             <Link
-              to={'/ide/task/' + shorten(task.id)}
+              to={`${process.env.REACT_APP_PUBLIC_URI}/ide/task/` + shorten(task.id)}
               target={'task-ide-' + task.id}
             >
               <Button

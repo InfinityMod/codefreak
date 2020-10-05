@@ -85,7 +85,7 @@ const menuItemRender = (
   menuItemProps: MenuDataItem,
   defaultDom: React.ReactNode
 ) => {
-  if (menuItemProps.isUrl || menuItemProps.children || !menuItemProps.path) {
+  if (menuItemProps.isUrl || menuItemProps.children) {
     return defaultDom
   }
   return (

@@ -5,6 +5,8 @@ import Centered from '../components/Centered'
 import Logo from '../components/Logo'
 import { AuthenticatedUser } from '../hooks/useAuthenticatedUser'
 import { useLoginMutation } from '../services/codefreak-api'
+import { createBrowserHistory } from "history";
+
 
 interface Credentials {
   username: string
@@ -15,7 +17,9 @@ interface LoginProps extends FormComponentProps<Credentials> {
   onSuccessfulLogin: (user: AuthenticatedUser) => void
 }
 
-const LoginPage: React.FC<LoginProps> = props => {
+const oAuthForms: Boolean =  true
+
+const LoginPage: React.FC<LoginProps> = (props) => {
   const { getFieldDecorator } = props.form
   const { onSuccessfulLogin } = props
 
@@ -34,6 +38,30 @@ const LoginPage: React.FC<LoginProps> = props => {
         login({ variables: values })
       }
     })
+  }
+
+  const routeChange = (e: React.FormEvent) => {
+    e.preventDefault()
+    let history = createBrowserHistory();
+    let path: string = `${process.env.PUBLIC_URL}/oauth2/authorization/auth0`;
+    history.push(path);
+    window.location.href  = path;
+  }
+
+  var oAuthLogin = (
+    <Button
+      type="primary"
+      onClick={routeChange}
+      style={{ width: '100%' }}
+      loading={loading}
+    >
+      OAuth Login
+    </Button>
+  )
+
+  if (oAuthForms === false)
+  {
+    oAuthLogin = (<div></div>)
   }
 
   return (
@@ -94,6 +122,7 @@ const LoginPage: React.FC<LoginProps> = props => {
             >
               Sign in
             </Button>
+            {oAuthLogin}
           </Form.Item>
         </Form>
       </Card>

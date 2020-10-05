@@ -95,5 +95,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "homepage" : "",
+  "devDependencies": {
+    "@craco/craco": "^5.6.4"
   }
 }

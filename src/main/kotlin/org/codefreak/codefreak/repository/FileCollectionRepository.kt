@@ -9,3 +9,8 @@ import org.springframework.stereotype.Repository
 @Repository
 @ConditionalOnProperty(name = ["codefreak.files.adapter"], havingValue = "JPA")
 interface FileCollectionRepository : CrudRepository<FileCollection, UUID>
+
+
+@Repository
+@ConditionalOnProperty(name = ["codefreak.files.adapter"], havingValue = "JPA_HDD")
+interface FileCollectionRepository2 : CrudRepository<FileCollection, UUID>

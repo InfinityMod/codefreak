@@ -77,6 +77,7 @@ class AppConfiguration {
      */
     var cpus = 0L
 
+    var mounts: Map<String, Pair<String, Boolean>> = mapOf()
     /**
      * Name of the network the container will be attached to
      * Default is the "bridge" network (Docker default)
@@ -117,10 +118,26 @@ class AppConfiguration {
   }
 
   class Files {
-    var adapter = FileAdapter.JPA
+    var adapter = FileAdapter.JPA_HDD
+    var userRoot = "c:\\tmp\\users\\"
+    var userAnswerPath = "{username}/{assignment_title}/{answer_title}/"
+
+    var systemRoot = "c:\\tmp\\admin\\"
+    var taskPath = "assignments/{assignment_title}/{assignment_uuid}/{task_title}/{task_uuid}/"
+
+    var hddUsage: List<HDDStorageUsage> =
+        listOf(
+            //HDDStorageUsage.Assignments,
+            HDDStorageUsage.Answers
+        )
 
     enum class FileAdapter {
-      JPA
+      JPA,
+      JPA_HDD
+    }
+    enum class HDDStorageUsage{
+      Assignments,
+      Answers
     }
   }
 

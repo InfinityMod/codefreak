@@ -4,12 +4,12 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.time.Instant
 import java.util.UUID
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.codefreak.codefreak.auth.Authority
 import org.codefreak.codefreak.auth.hasAuthority
+import org.codefreak.codefreak.config.AppConfiguration
 import org.codefreak.codefreak.entity.Answer
 import org.codefreak.codefreak.entity.AssignmentStatus
 import org.codefreak.codefreak.entity.Submission
@@ -17,6 +17,7 @@ import org.codefreak.codefreak.entity.Task
 import org.codefreak.codefreak.entity.User
 import org.codefreak.codefreak.repository.AnswerRepository
 import org.codefreak.codefreak.service.file.FileService
+import org.codefreak.codefreak.service.file.PathResolver
 import org.codefreak.codefreak.util.FrontendUtil
 import org.codefreak.codefreak.util.TarUtil
 import org.codefreak.codefreak.util.afterClose
@@ -43,6 +44,12 @@ class AnswerService : BaseService() {
   @Autowired
   private lateinit var taskService: TaskService
 
+  @Autowired
+  lateinit var config: AppConfiguration
+
+  @Autowired
+  lateinit var pathResolver: PathResolver
+
   fun findAnswer(taskId: UUID, userId: UUID): Answer = answerRepository.findByTaskIdAndSubmissionUserId(taskId, userId)
       .orElseThrow { EntityNotFoundException("Answer not found.") }
 
@@ -58,19 +65,19 @@ class AnswerService : BaseService() {
   @Transactional
   fun deleteAnswer(answerId: UUID) = answerRepository.deleteById(answerId)
 
-  @Transactional
   fun setFiles(answer: Answer): OutputStream {
     require(answer.isEditable) { "The answer is not editable anymore" }
-    return fileService.writeCollectionTar(answer.id).afterClose {
-      answer.updatedAt = Instant.now()
-      containerService.answerFilesUpdatedExternally(answer.id)
-    }
+    val path: PathResolver = pathResolver.resolveAnswerPath(answer)
+    return fileService.writeCollectionTar(answer.id, path).afterClose { containerService.answerFilesUpdated(answer) }
   }
 
   fun copyFilesFromTask(answer: Answer) {
     containerService.saveTaskFiles(answer.task)
-    fileService.writeCollectionTar(answer.id).use { out ->
-      fileService.readCollectionTar(answer.task.id).use { `in` ->
+    val path: PathResolver = pathResolver.resolveAnswerPath(answer)
+    val taskPath: PathResolver = pathResolver.resolveTasksPath(answer.task)
+
+    fileService.writeCollectionTar(answer.id, path).use { out ->
+      fileService.readCollectionTar(answer.task.id, taskPath).use { `in` ->
         TarUtil.copyEntries(TarArchiveInputStream(`in`), TarUtil.PosixTarArchiveOutputStream(out), filter = {
           !answer.task.isHidden(it)
         })
@@ -81,18 +88,19 @@ class AnswerService : BaseService() {
   fun resetAnswerFiles(answer: Answer) {
     require(answer.isEditable) { "The answer is not editable anymore" }
     copyFilesFromTask(answer)
-    containerService.answerFilesUpdatedExternally(answer.id)
+    containerService.answerFilesUpdated(answer)
   }
 
   fun copyFilesForEvaluation(answer: Answer): InputStream {
     val out = ByteArrayOutputStream()
     val outTar = TarUtil.PosixTarArchiveOutputStream(out)
-    fileService.readCollectionTar(answer.id).use { answerFiles ->
+    val path: PathResolver = pathResolver.resolveAnswerPath(answer)
+    fileService.readCollectionTar(answer.id, path).use { answerFiles ->
       TarUtil.copyEntries(TarArchiveInputStream(answerFiles), outTar, filter = {
         !answer.task.isHidden(it) && !answer.task.isProtected(it)
       })
     }
-    fileService.readCollectionTar(answer.task.id).use { taskFiles ->
+    fileService.readCollectionTar(answer.task.id, path).use { taskFiles ->
       TarUtil.copyEntries(TarArchiveInputStream(taskFiles), outTar, filter = {
         answer.task.isHidden(it) || answer.task.isProtected(it)
       })

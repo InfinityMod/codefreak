@@ -23,11 +23,11 @@ enum class FileDtoType {
 
 @GraphQLName("File")
 class FileDto(
-  val collectionId: UUID,
-  val collectionDigest: String,
-  val path: String,
-  val content: String?,
-  val type: FileDtoType
+    val collectionId: UUID,
+    val collectionDigest: String,
+    val path: String,
+    val content: String?,
+    val type: FileDtoType
 ) {
   constructor(collectionId: UUID, collectionDigest: ByteArray, virtualFile: FileContentService.VirtualFile) : this(
       collectionId,
@@ -48,7 +48,7 @@ class FileQuery : BaseResolver(), Query {
     serviceAccess.getService(ContainerService::class).saveAnswerFiles(answer, forceSaveFiles)
     authorization.requireAuthorityIfNotCurrentUser(answer.submission.user, Authority.ROLE_TEACHER)
     val digest = serviceAccess.getService(FileService::class).getCollectionMd5Digest(answerId)
-    serviceAccess.getService(FileContentService::class).getFiles(answer.id).map {
+    serviceAccess.getService(FileContentService::class).getFiles(answer.id, answer).map {
       FileDto(answerId, digest, it)
     }
   }
@@ -56,7 +56,7 @@ class FileQuery : BaseResolver(), Query {
   fun answerFile(answerId: UUID, path: String): FileDto = context {
     val answer = serviceAccess.getService(AnswerService::class).findAnswer(answerId)
     authorization.requireAuthorityIfNotCurrentUser(answer.submission.user, Authority.ROLE_TEACHER)
-    val file = serviceAccess.getService(FileContentService::class).getFile(answer.id, path)
+    val file = serviceAccess.getService(FileContentService::class).getFile(answer.id, path, answer)
     val digest = serviceAccess.getService(FileService::class).getCollectionMd5Digest(answerId)
     FileDto(answer.id, digest, file)
   }

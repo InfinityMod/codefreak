@@ -5,6 +5,7 @@ import java.time.Instant
 import java.util.UUID
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.codefreak.codefreak.entity.Answer
 import org.codefreak.codefreak.service.BaseService
 import org.codefreak.codefreak.util.TarUtil
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,6 +18,9 @@ class FileContentService : BaseService() {
   @Autowired
   lateinit var fileService: FileService
 
+  @Autowired
+  lateinit var pathResolver: PathResolver
+
   enum class VirtualFileType {
     FILE,
     DIRECTORY,
@@ -24,22 +28,24 @@ class FileContentService : BaseService() {
   }
 
   class VirtualFile(
-    val path: String,
-    val lastModifiedDate: Instant,
-    val type: VirtualFileType,
-    val content: ByteArray?
+      val path: String,
+      val lastModifiedDate: Instant,
+      val type: VirtualFileType,
+      val content: ByteArray?
   )
 
-  fun getFile(fileCollectionId: UUID, path: String): VirtualFile {
-    fileService.readCollectionTar(fileCollectionId).use { collectionTar ->
+  fun getFile(fileCollectionId: UUID, path: String, answer: Answer): VirtualFile {
+    val _path = pathResolver.resolveAnswerPath(answer)
+    fileService.readCollectionTar(fileCollectionId, _path).use { collectionTar ->
       TarUtil.findFile(collectionTar, path) { entry, fileStream ->
         return tarEntryToVirtualFile(entry, fileStream)
       }
     }
   }
 
-  fun getFiles(fileCollectionId: UUID): List<VirtualFile> {
-    fileService.readCollectionTar(fileCollectionId).use { collectionTar ->
+  fun getFiles(fileCollectionId: UUID, answer: Answer): List<VirtualFile> {
+    val _path = pathResolver.resolveAnswerPath(answer)
+    fileService.readCollectionTar(fileCollectionId, _path).use { collectionTar ->
       TarArchiveInputStream(collectionTar).let { tar ->
         return generateSequence { tar.nextTarEntry }.map { tarEntryToVirtualFile(it, tar) }.toList()
       }

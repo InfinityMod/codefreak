@@ -14,8 +14,6 @@ import com.spotify.docker.client.messages.Container
 import com.spotify.docker.client.messages.HostConfig
 import java.io.InputStream
 import java.time.Instant
-import java.util.Date
-import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 import java.util.regex.Pattern
 import javax.ws.rs.ProcessingException
@@ -25,6 +23,7 @@ import org.codefreak.codefreak.entity.Task
 import org.codefreak.codefreak.repository.AnswerRepository
 import org.codefreak.codefreak.repository.TaskRepository
 import org.codefreak.codefreak.service.file.FileService
+import org.codefreak.codefreak.service.file.PathResolver
 import org.codefreak.codefreak.util.withTrailingSlash
 import org.glassfish.jersey.internal.LocalizationMessages
 import org.slf4j.LoggerFactory
@@ -33,6 +32,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.StreamUtils
+import java.util.UUID
+import java.util.Date
+import kotlin.collections.ArrayList
 
 @Service
 class ContainerService : BaseService() {
@@ -72,6 +74,9 @@ class ContainerService : BaseService() {
 
   @Autowired
   private lateinit var reverseProxy: ReverseProxy
+
+  @Autowired
+  lateinit var pathResolver: PathResolver
 
   /**
    * A map that keeps a lock for each answer (collection) that should be used for file operations
@@ -117,17 +122,19 @@ class ContainerService : BaseService() {
    */
   @Throws(ResourceLimitException::class)
   fun startIdeContainer(answer: Answer, readOnly: Boolean = false): String {
-    return startIdeContainer(answer.id, if (readOnly) LABEL_READ_ONLY_ANSWER_ID else LABEL_ANSWER_ID, answer.id)
+    val path: PathResolver = pathResolver.resolveAnswerPath(answer)
+    return startIdeContainer(answer.id, if (readOnly) LABEL_READ_ONLY_ANSWER_ID else LABEL_ANSWER_ID, answer.id, path)
   }
 
   @Throws(ResourceLimitException::class)
   fun startIdeContainer(task: Task): String {
-    return startIdeContainer(task.id, LABEL_TASK_ID, task.id)
+    val path: PathResolver = pathResolver.resolveTasksPath(task)
+    return startIdeContainer(task.id, LABEL_TASK_ID, task.id, path)
   }
 
   @Synchronized
   @Throws(ResourceLimitException::class)
-  fun startIdeContainer(id: UUID, label: String, fileCollectionId: UUID): String {
+  fun startIdeContainer(id: UUID, label: String, fileCollectionId: UUID, path: PathResolver): String {
     // either take existing container or create a new one
     val container = getContainerWithLabel(label, id.toString())
     if (container != null && isContainerRunning(container.id())) {
@@ -145,13 +152,13 @@ class ContainerService : BaseService() {
         val containerId = this.createIdeContainer(label, id)
         docker.startContainer(containerId)
         // prepare the environment after the container has started
-        this.copyFilesToIde(containerId, fileCollectionId)
+        this.copyFilesToIde(containerId, fileCollectionId, path)
         getIdeUrl(containerId)
       } else {
         // make sure the container is running. Also existing ones could have been stopped
         docker.startContainer(container.id())
         // write fresh files that might have been uploaded while being stopped
-        this.copyFilesToIde(container.id(), fileCollectionId)
+        this.copyFilesToIde(container.id(), fileCollectionId, path)
         getIdeUrl(container.id())
       }
     }
@@ -223,21 +230,22 @@ class ContainerService : BaseService() {
       log.debug("Skipped saving of files from answer ${answer.id} because IDE is not running")
       return answer
     }
+    val path: PathResolver = pathResolver.resolveAnswerPath(answer)
     withCollectionFileLock(answer.id) {
       archiveContainer(containerId, "$PROJECT_PATH/.") { tar ->
-        fileService.writeCollectionTar(answer.id).use { StreamUtils.copy(tar, it) }
+        fileService.writeCollectionTar(answer.id, path).use { StreamUtils.copy(tar, it) }
       }
     }
     log.info("Saved files of answer ${answer.id} from container $containerId (force=$force)")
-    answer.updatedAt = Instant.now()
     return entityManager.merge(answer)
   }
 
   @Transactional
   fun saveTaskFiles(task: Task): Task {
     val containerId = getContainerWithLabel(LABEL_TASK_ID, task.id.toString())?.id() ?: return task
+    val path: PathResolver = pathResolver.resolveTasksPath(task)
     archiveContainer(containerId, "$PROJECT_PATH/.") { tar ->
-      fileService.writeCollectionTar(task.id).use { StreamUtils.copy(tar, it) }
+      fileService.writeCollectionTar(task.id, path).use { StreamUtils.copy(tar, it) }
     }
     log.info("Saved files of task ${task.id} from container $containerId")
     return entityManager.merge(task)
@@ -255,8 +263,8 @@ class ContainerService : BaseService() {
   }
 
   protected fun createContainer(
-    image: String,
-    configure: ContainerBuilder.() -> Unit = {}
+      image: String,
+      configure: ContainerBuilder.() -> Unit = {}
   ): String {
     val normalizedImageName = normalizeImageName(image)
     pullDockerImage(normalizedImageName)
@@ -284,12 +292,21 @@ class ContainerService : BaseService() {
           label to id.toString()
       )
       reverseProxy.configureContainer(this)
+      val binds: ArrayList<HostConfig.Bind> = ArrayList()
+      for ((k, v) in config.ide.mounts) {
+        binds.add(HostConfig.Bind.from(v.first)
+            .to(k)
+            .readOnly(v.second)
+            .build())
+      }
+
       hostConfig {
         restartPolicy(HostConfig.RestartPolicy.unlessStopped())
         capAdd("SYS_PTRACE") // required for lsof
         memory(config.ide.memory)
         memorySwap(config.ide.memory) // memory+swap = memory ==> 0 swap
         nanoCpus(config.ide.cpus * 1000000000L)
+        appendBinds(*binds.toTypedArray())
       }
     }
 
@@ -304,7 +321,7 @@ class ContainerService : BaseService() {
    * on a running container and will throw an IllegalStateException otherwise.
    * Please lock the collection before using this method to prevent losing files
    */
-  protected fun copyFilesToIde(containerId: String, fileCollectionId: UUID) {
+  protected fun copyFilesToIde(containerId: String, fileCollectionId: UUID, path: PathResolver) {
     // extract possible existing files of the current submission into project dir
     if (fileService.collectionExists(fileCollectionId)) {
       // remove existing files before writing new ones
@@ -312,7 +329,7 @@ class ContainerService : BaseService() {
       // two globs: one for regular files and one for hidden files/dirs except . and ..
       exec(containerId, arrayOf("sh", "-c", "rm -rf $PROJECT_PATH/* $PROJECT_PATH/.[!.]*"))
 
-      fileService.readCollectionTar(fileCollectionId).use {
+      fileService.readCollectionTar(fileCollectionId, path).use {
         docker.copyToContainer(it, containerId, PROJECT_PATH)
       }
     }
@@ -321,10 +338,12 @@ class ContainerService : BaseService() {
     exec(containerId, arrayOf("chown", "-R", "coder:coder", PROJECT_PATH))
   }
 
-  fun answerFilesUpdatedExternally(answerId: UUID) {
+  fun answerFilesUpdated(answer: Answer) {
+    val answerId = answer.id
     try {
       withCollectionFileLock(answerId) {
-        getAnswerIdeContainer(answerId)?.let { copyFilesToIde(it, answerId) }
+        val path: PathResolver = pathResolver.resolveAnswerPath(answer)
+        getAnswerIdeContainer(answerId)?.let { copyFilesToIde(it, answerId, path) }
       }
     } catch (e: IllegalStateException) {
       // happens if the IDE is not running.
@@ -340,7 +359,7 @@ class ContainerService : BaseService() {
   }
 
   protected fun getAllIdeContainers(
-    vararg listParams: DockerClient.ListContainersParam
+      vararg listParams: DockerClient.ListContainersParam
   ) = mutableListOf<Container>().apply {
     addAll(listContainers(withLabel(LABEL_ANSWER_ID), *listParams))
     addAll(listContainers(withLabel(LABEL_READ_ONLY_ANSWER_ID), *listParams))
@@ -437,12 +456,12 @@ class ContainerService : BaseService() {
   }
 
   fun runCommandsForEvaluation(
-    answer: Answer,
-    image: String,
-    projectPath: String,
-    commands: List<String>,
-    stopOnFail: Boolean,
-    processFiles: ((InputStream) -> Unit)? = null
+      answer: Answer,
+      image: String,
+      projectPath: String,
+      commands: List<String>,
+      stopOnFail: Boolean,
+      processFiles: ((InputStream) -> Unit)? = null
   ): List<ExecResult> {
     val containerId = createContainer(image) {
       doNothingAndKeepAlive()

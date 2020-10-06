@@ -19,6 +19,7 @@ import org.codefreak.codefreak.service.evaluation.EvaluationService
 import org.codefreak.codefreak.service.evaluation.isBuiltIn
 import org.codefreak.codefreak.service.evaluation.runner.CommentRunner
 import org.codefreak.codefreak.service.file.FileService
+import org.codefreak.codefreak.service.file.PathResolver
 import org.codefreak.codefreak.util.PositionUtil
 import org.codefreak.codefreak.util.TarUtil
 import org.codefreak.codefreak.util.TarUtil.getYamlDefinition
@@ -45,6 +46,9 @@ TaskService : BaseService() {
 
   @Autowired
   private lateinit var fileService: FileService
+
+  @Autowired
+  lateinit var pathResolver: PathResolver
 
   @Transactional
   fun findTask(id: UUID): Task = taskRepository.findById(id)
@@ -77,10 +81,11 @@ TaskService : BaseService() {
         }
 
     addBuiltInEvaluationSteps(task)
+    val path = pathResolver.resolveTasksPath(task)
 
     evaluationStepDefinitionRepository.saveAll(task.evaluationStepDefinitions)
     task = taskRepository.save(task)
-    fileService.writeCollectionTar(task.id).use { fileCollection ->
+    fileService.writeCollectionTar(task.id, path).use { fileCollection ->
       TarUtil.copyEntries(tarContent.inputStream(), fileCollection, filter = { !it.name.equals("codefreak.yml", true) })
     }
     return task
@@ -146,7 +151,8 @@ TaskService : BaseService() {
   fun getExportTar(task: Task): ByteArray {
     val out = ByteArrayOutputStream()
     val tar = TarUtil.PosixTarArchiveOutputStream(out)
-    fileService.readCollectionTar(task.id).use { files ->
+    val path = pathResolver.resolveTasksPath(task)
+    fileService.readCollectionTar(task.id, path).use { files ->
       TarUtil.copyEntries(TarArchiveInputStream(files), tar, filter = { !TarUtil.isRoot(it) && it.name != "codefreak.yml" })
     }
 

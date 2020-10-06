@@ -8,6 +8,8 @@ import org.springframework.util.StreamUtils
 
 interface FileService {
   fun readCollectionTar(collectionId: UUID): InputStream
+  fun readCollectionTar(collectionId: UUID, origin: PathResolver?): InputStream
+  fun writeCollectionTar(collectionId: UUID, destination:PathResolver?): OutputStream
   fun writeCollectionTar(collectionId: UUID): OutputStream
   fun collectionExists(collectionId: UUID): Boolean
   fun deleteCollection(collectionId: UUID)

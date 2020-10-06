@@ -4,72 +4,76 @@ import org.codefreak.codefreak.config.AppConfiguration
 import org.codefreak.codefreak.entity.Answer
 import org.codefreak.codefreak.entity.Task
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Configurable
 import org.springframework.stereotype.Service
 import java.nio.file.Path
 
 @Service
-@Configurable
-class PathResolver()
+class PathResolver
 {
   @Autowired
   lateinit var config: AppConfiguration
 
+  constructor()
+  constructor(config: AppConfiguration) {
+    this.config = config
+  }
+
   var root: Path? = null
   var location: Path? = null
     set(value){
-      if (root != null)
-        field = value
+      field = if (root != null)
+        value
+      else
+        null
     }
 
   val path: Path?
     get(){
-      return (root?.resolve(location?: Path.of("")) ?: null)
+      return (root?.resolve(location!!)?: null)
     }
 
   private fun batchReplaceInString(str: String, replacements: List<Pair<String, String>>): String {
-    var _str: String = str
+    var tmpStr: String = str
     replacements.forEach {
-      _str = _str.replace(it.first, it.second)
+      tmpStr = tmpStr.replace(it.first, it.second)
     }
-    return _str
+    return tmpStr
   }
 
   fun resolveAnswerPath(answer: Answer): PathResolver {
-    val answer_title = answer.task.title
-    val assignment_title = answer.task.assignment?.title ?: "Unknown_Assignment"
+    val answerTitle = answer.task.title
+    val assignmentTitle = answer.task.assignment?.title ?: "Unknown_Assignment"
     val username = answer.submission.user.username
-    val value_mappings =
-        listOf<Pair<String, String>>(
-            Pair("{answer_title}", answer_title),
-            Pair("{assignment_title}", assignment_title),
+    val valueMappings =
+        listOf(
+            Pair("{answer_title}", answerTitle),
+            Pair("{assignment_title}", assignmentTitle),
             Pair("{username}", username),
-
         )
-    val resolver = PathResolver()
+    val resolver = PathResolver(config)
     if (config.files.hddUsage.contains(AppConfiguration.Files.HDDStorageUsage.Answers)){
       resolver.root = Path.of(config.files.userRoot)
-      resolver.location = Path.of(batchReplaceInString(config.files.userAnswerPath, value_mappings))
+      resolver.location = Path.of(batchReplaceInString(config.files.userAnswerPath, valueMappings))
     }
     return resolver
   }
 
   fun resolveTasksPath(task:Task): PathResolver {
-    val assignment_title = task.assignment?.title?: "Unknown_Assignment"
-    val assignment_uuid = task.assignment?.id.toString()
-    val task_title = task.title
-    val task_uuid = task.id.toString()
-    val value_mappings =
-        listOf<Pair<String, String>>(
-            Pair("{assignment_title}", assignment_title),
-            Pair("{assignment_uuid}", assignment_uuid),
-            Pair("{task_title}", task_title),
-            Pair("{task_uuid}", task_uuid)
+    val assignmentTitle = task.assignment?.title?: "Unknown_Assignment"
+    val assignmentUuid = task.assignment?.id.toString()
+    val taskTitle = task.title
+    val taskUuid = task.id.toString()
+    val valueMappings =
+        listOf(
+            Pair("{assignment_title}", assignmentTitle),
+            Pair("{assignment_uuid}", assignmentUuid),
+            Pair("{task_title}", taskTitle),
+            Pair("{task_uuid}", taskUuid)
             )
-    val resolver = PathResolver()
+    val resolver = PathResolver(config)
     if (config.files.hddUsage.contains(AppConfiguration.Files.HDDStorageUsage.Assignments)){
       resolver.root = Path.of(config.files.systemRoot)
-      resolver.location = Path.of(batchReplaceInString(config.files.taskPath, value_mappings))
+      resolver.location = Path.of(batchReplaceInString(config.files.taskPath, valueMappings))
     }
     return resolver
   }

@@ -1,5 +1,16 @@
 package org.codefreak.codefreak.entity
 
+import java.util.Optional
+import javax.persistence.CollectionTable
+import javax.persistence.Column
+import javax.persistence.ElementCollection
+import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
+import javax.persistence.FetchType
+import javax.persistence.Inheritance
+import javax.persistence.Table
+import kotlin.jvm.Transient
 import org.codefreak.codefreak.auth.AuthenticationMethod
 import org.codefreak.codefreak.auth.Role
 import org.codefreak.codefreak.service.UserService
@@ -11,9 +22,6 @@ import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.OAuth2User
-import java.util.*
-import javax.persistence.*
-import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "user")
@@ -54,11 +62,11 @@ open class User(private var username: String) : BaseEntity(), UserDetails, Crede
 @Immutable
 @Inheritance
 @Table(name = "user")
-class Oidc_User: User, OidcUser {
+class Oidc_User : User, OidcUser {
   @Transient
   private var oidcPrincipal: OidcUser
 
-  constructor(oidcPrincipal: OidcUser, userService: UserService): super(Optional.ofNullable(oidcPrincipal.email).orElse(oidcPrincipal.name)) {
+  constructor(oidcPrincipal: OidcUser, userService: UserService) : super(Optional.ofNullable(oidcPrincipal.email).orElse(oidcPrincipal.name)) {
     this.oidcPrincipal = oidcPrincipal
 
     val user = userService.getOrCreateUser(super.getUsername()) {
@@ -66,7 +74,7 @@ class Oidc_User: User, OidcUser {
       lastName = oidcPrincipal.familyName
       authMethod = AuthenticationMethod.OAUTH.name
     }
-    BeanUtils.copyProperties(this, user);
+    BeanUtils.copyProperties(this, user)
   }
 
   // OidcUser support
@@ -87,15 +95,14 @@ class Oidc_User: User, OidcUser {
   }
 }
 
-
 @Immutable
 @Inheritance
 @Table(name = "user")
-class OAuth_User: User, OAuth2User {
+class OAuth_User : User, OAuth2User {
   @Transient
   private var oauthPrincipal: OAuth2User
 
-  constructor(oauthPrincipal: OAuth2User, userService: UserService): super(Optional.ofNullable(oauthPrincipal.getAttribute<String>("email")).orElse(oauthPrincipal.getAttribute<String>("nickname"))) {
+  constructor(oauthPrincipal: OAuth2User, userService: UserService) : super(Optional.ofNullable(oauthPrincipal.getAttribute<String>("email")).orElse(oauthPrincipal.getAttribute<String>("nickname"))) {
     this.oauthPrincipal = oauthPrincipal
     val names = oauthPrincipal.getAttribute<String>("name")?.split(", ")
 
@@ -104,7 +111,7 @@ class OAuth_User: User, OAuth2User {
       lastName = names?.getOrNull(0) ?: "Unknown"
       authMethod = AuthenticationMethod.OAUTH.name
     }
-    BeanUtils.copyProperties(this, user);
+    BeanUtils.copyProperties(this, user)
   }
 
   // OidcUser support

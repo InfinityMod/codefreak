@@ -4,7 +4,7 @@
 # or by using OS environment variables. For more information on how to configure Spring see         #
 # https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html #
 #####################################################################################################
-SUB_URL: ""
+SUB_URL: "/submissions"
 
 hydra:
   url: http://127.0.0.1:4444

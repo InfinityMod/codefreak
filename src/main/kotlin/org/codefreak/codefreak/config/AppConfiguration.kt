@@ -124,10 +124,26 @@ class AppConfiguration {
   }
 
   class Files {
-    var adapter = FileAdapter.JPA
+    var adapter = FileAdapter.JPA_HDD
+    var userRoot = "c:\\tmp\\users\\"
+    var userAnswerPath = "{username}/{assignment_title}/{answer_title}/"
+
+    var systemRoot = "c:\\tmp\\admin\\"
+    var taskPath = "assignments/{assignment_title}/{assignment_uuid}/{task_title}/{task_uuid}/"
+
+    var hddUsage: List<HDDStorageUsage> =
+        listOf(
+            //HDDStorageUsage.Assignments,
+            HDDStorageUsage.Answers
+        )
 
     enum class FileAdapter {
-      JPA
+      JPA,
+      JPA_HDD
+    }
+    enum class HDDStorageUsage{
+      Assignments,
+      Answers
     }
   }
 

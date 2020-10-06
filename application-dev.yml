@@ -74,7 +74,7 @@ codefreak:
       # Authority management of oAuth2 to define admin and teacher accounts
       '[foo@bar.com]': admin
   files:
-    adapter: jpa
+    adapter: jpa_hdd
   docker:
     # All of the docker settings below will fall back to a system-depended default value if unset
     host: ~

@@ -3,6 +3,7 @@ package org.codefreak.codefreak.util
 import org.codefreak.codefreak.auth.NotAuthenticatedException
 import org.codefreak.codefreak.entity.User
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.context.request.RequestContextHolder
@@ -24,6 +25,6 @@ object FrontendUtil {
     }
     throw NotAuthenticatedException()
   }
-
-  fun getUriBuilder() = ServletUriComponentsBuilder.fromCurrentRequestUri().replacePath(null)
+  fun getUriBuilder() = ServletUriComponentsBuilder.fromCurrentContextPath()
+  //fun getUriBuilder() = ServletUriComponentsBuilder.fromCurrentRequestUri().replacePath(null)
 }

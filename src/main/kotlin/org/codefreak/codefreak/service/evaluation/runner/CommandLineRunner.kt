@@ -1,6 +1,5 @@
 package org.codefreak.codefreak.service.evaluation.runner
 
-import java.io.InputStream
 import org.codefreak.codefreak.entity.Answer
 import org.codefreak.codefreak.entity.Feedback
 import org.codefreak.codefreak.service.ContainerService
@@ -9,6 +8,10 @@ import org.codefreak.codefreak.service.evaluation.EvaluationRunner
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import kotlin.text.Charsets.UTF_8
+import org.fusesource.jansi.HtmlAnsiOutputStream
 
 @Component
 class CommandLineRunner : EvaluationRunner {
@@ -33,7 +36,7 @@ class CommandLineRunner : EvaluationRunner {
   protected fun executionToFeedback(execution: Execution): Feedback {
     return Feedback(execution.command).apply {
       longDescription = if (execution.result.output.isNotBlank()) {
-        wrapInMarkdownCodeBlock(execution.result.output.trim())
+        wrapInMarkdownHTMLCodeBlock(processColorCodes(execution.result.output.trim()))
       } else null
       status = if (execution.result.exitCode == 0L) Feedback.Status.SUCCESS else Feedback.Status.FAILED
     }
@@ -58,4 +61,12 @@ class CommandLineRunner : EvaluationRunner {
   }
 
   protected fun wrapInMarkdownCodeBlock(value: String) = "```\n$value\n```"
+  protected fun wrapInMarkdownHTMLCodeBlock(value: String) = "<virtualHtml>\n${value.replace("\n", "<br>")}\n</virtualHtml>"
+  protected fun processColorCodes(text: String): String {
+    val os = ByteArrayOutputStream()
+    val hos = HtmlAnsiOutputStream(os)
+    hos.write(text.toByteArray(UTF_8))
+    hos.close()
+    return String(os.toByteArray(), UTF_8)
+  }
 }

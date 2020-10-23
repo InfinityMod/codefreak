@@ -1,6 +1,6 @@
 import { Card, Collapse, Empty, Icon, Result, Select, Typography } from 'antd'
 import React, { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown from 'react-markdown/with-html'
 import {
   EvaluationStep,
   EvaluationStepResult,

@@ -89,7 +89,7 @@ class JUnitRunner : CommandLineRunner() {
             else -> null
           }
           // Make jUnit output valid markdown (code block)
-          longDescription?.let { longDescription = wrapInMarkdownCodeBlock(it) }
+          longDescription?.let { longDescription = wrapInMarkdownHTMLCodeBlock(processColorCodes(it)) }
           status = when {
             testCase.isSkipped -> Feedback.Status.IGNORE
             testCase.isSuccessful -> Feedback.Status.SUCCESS

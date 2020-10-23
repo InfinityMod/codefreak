@@ -70,85 +70,85 @@ const FeedbackSeverityIcon: React.FC<{ severity: FeedbackSeverity }> = ({
 
 const renderFeedbackPanel = (answerId: string, feedback: Feedback) => {
   let icon = null
-  // either show the success icon or the severity of failure
-  switch (feedback.status) {
-    case FeedbackStatus.Failed:
-      if (feedback.severity) {
-        icon = <FeedbackSeverityIcon severity={feedback.severity} />
-      } else {
+    // either show the success icon or the severity of failure
+    switch (feedback.status) {
+      case FeedbackStatus.Failed:
+        if (feedback.severity) {
+          icon = <FeedbackSeverityIcon severity={feedback.severity} />
+        } else {
+          icon = (
+            <Icon
+              type="exclamation-circle"
+              className="feedback-icon feedback-icon-failed"
+            />
+          )
+        }
+        break
+      case FeedbackStatus.Success:
         icon = (
           <Icon
-            type="exclamation-circle"
-            className="feedback-icon feedback-icon-failed"
+            type="check-circle"
+            className="feedback-icon feedback-icon-success"
           />
         )
-      }
-      break
-    case FeedbackStatus.Success:
-      icon = (
-        <Icon
-          type="check-circle"
-          className="feedback-icon feedback-icon-success"
-        />
-      )
-      break
-    case FeedbackStatus.Ignore:
-      icon = (
-        <Icon type="forward" className="feedback-icon feedback-icon-ignore" />
-      )
-      break
-  }
+        break
+      case FeedbackStatus.Ignore:
+        icon = (
+          <Icon type="forward" className="feedback-icon feedback-icon-ignore" />
+        )
+        break
+    }
 
-  const title = (
-    <>
-      {icon}
-      <ReactMarkdown
-        source={feedback.summary}
-        allowedTypes={[
-          'inlineCode',
-          'text',
-          'strong',
-          'delete',
-          'emphasis',
-          'link'
-        ]}
-        unwrapDisallowed
-      />
-    </>
-  )
-  let body = null
-  if (feedback.fileContext) {
-    const { lineStart, lineEnd } = feedback.fileContext
-    body = (
-      <CodeViewerCard
-        answerId={answerId}
-        path={feedback.fileContext.path}
-        lineStart={lineStart || undefined}
-        lineEnd={lineEnd || undefined}
-      />
-    )
-  }
-
-  if (feedback.longDescription) {
-    body = (
+    const title = (
       <>
-        {body}
-        <LongDescriptionMarkdown source={feedback.longDescription} />
+        {icon}
+        <ReactMarkdown
+          source={feedback.summary}
+          allowedTypes={[
+            'inlineCode',
+            'text',
+            'strong',
+            'delete',
+            'emphasis',
+            'link'
+          ]}
+          unwrapDisallowed
+        />
       </>
     )
-  }
+    let body = null
+    if (feedback.fileContext) {
+      const { lineStart, lineEnd } = feedback.fileContext
+      body = (
+        <CodeViewerCard
+          answerId={answerId}
+          path={feedback.fileContext.path}
+          lineStart={lineStart || undefined}
+          lineEnd={lineEnd || undefined}
+        />
+      )
+    }
 
-  return (
-    <Collapse.Panel
-      disabled={!body}
-      showArrow={!!body}
-      header={title}
-      extra={<FileReference data={feedback.fileContext} />}
-      key={feedback.id}
-    >
-      {body}
-    </Collapse.Panel>
-  )
+    if (feedback.longDescription) {
+      body = (
+        <>
+          {body}
+          <LongDescriptionMarkdown source={feedback.longDescription} />
+        </>
+      )
+    }
+
+    return (
+      <Collapse.Panel
+        disabled={!body}
+        showArrow={!!body}
+        header={title}
+        extra={<FileReference data={feedback.fileContext} />}
+        key={feedback.id}
+      >
+        {body}
+      </Collapse.Panel>
+    )
 }
 
 const EvaluationResult: React.FC<{ evaluationId: string }> = ({
@@ -277,9 +277,32 @@ const EvaluationStepPanel: React.FC<{
       body = <SyntaxHighlighter>{step.summary}</SyntaxHighlighter>
     }
   } else {
+    var feedback_groups: string[] = feedbackList.map(feedback => feedback.group!)
+    feedback_groups = feedback_groups.filter((n, i) => feedback_groups.indexOf(n) === i)
+
+    var feedback_panel: any[] = []
+    if(feedback_groups.length === 1)
+    {
+        feedback_panel = feedbackList.map(feedback => renderFeedbackPanel(answerId, feedback))
+    }else{
+        feedback_panel = feedback_groups.map(
+          feedback_group =>
+              <Collapse.Panel
+                disabled={false}
+                showArrow={true}
+                header={feedback_group}
+                extra={feedback_group}
+                key="0"
+                >
+                  <Collapse>
+                    {feedbackList.filter(feedback => feedback.group === feedback_group).map(feedback => renderFeedbackPanel(answerId, feedback))}
+                  </Collapse>
+              </Collapse.Panel>
+        )
+    }
     body = (
       <Collapse>
-        {feedbackList.map(feedback => renderFeedbackPanel(answerId, feedback))}
+        {feedback_panel}
       </Collapse>
     )
   }

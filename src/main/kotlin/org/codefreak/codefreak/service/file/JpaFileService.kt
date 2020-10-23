@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.ArchiveInputStream
 import org.apache.commons.compress.archivers.ArchiveStreamFactory
 import org.apache.commons.lang.StringUtils.startsWith
+import org.codefreak.codefreak.config.AppConfiguration
 import org.codefreak.codefreak.entity.FileCollection
 import org.codefreak.codefreak.repository.FileCollectionRepository
 import org.codefreak.codefreak.repository.FileCollectionRepository2
@@ -22,7 +23,9 @@ import java.io.File
 import java.util.UUID
 import java.nio.file.Files
 import java.nio.file.Path
-
+import java.nio.file.Paths
+import java.nio.file.attribute.PosixFilePermissions
+import java.util.*
 
 
 @Service

@@ -70,11 +70,31 @@ class Oidc_User : User, OidcUser {
     this.oidcPrincipal = oidcPrincipal
 
     val user = userService.getOrCreateUser(super.getUsername()) {
-      firstName = oidcPrincipal.name
-      lastName = oidcPrincipal.familyName
-      authMethod = AuthenticationMethod.OAUTH.name
+      val firstNames: MutableList<String?> = mutableListOf<String?>()
+      val lastNames: MutableList<String?>  = mutableListOf<String?>()
+
+      if (oidcPrincipal.fullName.isNotEmpty()){
+        val nameSplit = oidcPrincipal.fullName.split(",");
+        if(nameSplit.size > 1)
+        {
+          firstNames.add(nameSplit.subList(1, nameSplit.size).joinToString(" "))
+          lastNames.add(nameSplit.getOrNull(0))
+        }else if (nameSplit.size == 1){
+          firstNames.add(nameSplit.getOrNull(0))
+        }
+      }
+      firstNames.add(oidcPrincipal?.givenName)
+      lastNames.add(oidcPrincipal?.familyName)
+
+      firstNames.add(oidcPrincipal?.name)
+      firstNames.add("unknown")
+      lastNames.add("unknown")
+
+      this.firstName = firstNames.filterNotNull()[0]
+      this.lastName = lastNames.filterNotNull()[0]
+      this.authMethod = AuthenticationMethod.OAUTH.name
     }
-    BeanUtils.copyProperties(this, user)
+    BeanUtils.copyProperties(user, this )
   }
 
   // OidcUser support
@@ -107,11 +127,11 @@ class OAuth_User : User, OAuth2User {
     val names = oauthPrincipal.getAttribute<String>("name")?.split(", ")
 
     val user = userService.getOrCreateUser(super.getUsername()) {
-      firstName = names?.getOrNull(1) ?: "Unknown"
-      lastName = names?.getOrNull(0) ?: "Unknown"
-      authMethod = AuthenticationMethod.OAUTH.name
+      this.firstName  = names?.getOrNull(1) ?: "Unknown"
+      this.lastName = names?.getOrNull(0) ?: "Unknown"
+      this.authMethod = AuthenticationMethod.OAUTH.name
     }
-    BeanUtils.copyProperties(this, user)
+    BeanUtils.copyProperties(user, this)
   }
 
   // OidcUser support

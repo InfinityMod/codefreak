@@ -24,7 +24,7 @@ project.autodiff.changeLogDiff = project.hasProperty('changeLogDiff')
   ? project.property('changeLogDiff') : "src/main/resources/db/changelog-diff.yaml"
 
 group = 'org.codefreak'
-sourceCompatibility = '1.8'
+sourceCompatibility = 11
 
 repositories {
   mavenCentral()
@@ -70,6 +70,7 @@ dependencies {
   implementation 'org.hibernate:hibernate-validator:6.1.5.Final'
   implementation 'com.google.guava:guava:29.0-jre'
   implementation 'org.rauschig:jarchivelib:0.7.1'
+  implementation 'org.fusesource.jansi:jansi:1.18'
   kapt 'org.springframework.boot:spring-boot-configuration-processor'
   runtimeOnly 'org.springframework.boot:spring-boot-devtools'
   runtimeOnly 'org.postgresql:postgresql'

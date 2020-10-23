@@ -100,7 +100,8 @@ class AnswerService : BaseService() {
         !answer.task.isHidden(it) && !answer.task.isProtected(it)
       })
     }
-    fileService.readCollectionTar(answer.task.id, path).use { taskFiles ->
+    val path_task: PathResolver = pathResolver.resolveTasksPath(answer.task)
+    fileService.readCollectionTar(answer.task.id, path_task).use { taskFiles ->
       TarUtil.copyEntries(TarArchiveInputStream(taskFiles), outTar, filter = {
         answer.task.isHidden(it) || answer.task.isProtected(it)
       })

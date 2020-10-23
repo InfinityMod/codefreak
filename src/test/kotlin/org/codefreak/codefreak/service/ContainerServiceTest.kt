@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream
 import org.codefreak.codefreak.SpringTest
 import org.codefreak.codefreak.entity.Answer
 import org.codefreak.codefreak.service.file.FileService
+import org.codefreak.codefreak.service.file.PathResolver
 import org.codefreak.codefreak.util.TarUtil
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
@@ -38,6 +39,9 @@ internal class ContainerServiceTest : SpringTest() {
   private val files = ByteArrayOutputStream().use {
     TarUtil.createTarFromDirectory(ClassPathResource("tasks/c-simple").file, it); it.toByteArray()
   }
+
+  @Autowired
+  lateinit var pathResolver: PathResolver
 
   @Before
   fun setupEntities() = super.seedDatabase()
@@ -71,7 +75,8 @@ internal class ContainerServiceTest : SpringTest() {
 
   @Test
   fun `files are extracted to project directory`() {
-    `when`(fileService.readCollectionTar(eq(answer.id))).thenReturn(files.inputStream())
+    val path = pathResolver.resolveAnswerPath(answer)
+    `when`(fileService.readCollectionTar(eq(answer.id), path)).thenReturn(files.inputStream())
     `when`(fileService.collectionExists(eq(answer.id))).thenReturn(true)
     containerService.startIdeContainer(answer)
     val containerId = getIdeContainer(answer).id()
@@ -84,9 +89,10 @@ internal class ContainerServiceTest : SpringTest() {
   @Test
   fun `files in the container are saved back to the database`() {
     val out = ByteArrayOutputStream()
-    `when`(fileService.readCollectionTar(eq(answer.id))).thenReturn(files.inputStream())
+    val path = pathResolver.resolveAnswerPath(answer)
+    `when`(fileService.readCollectionTar(eq(answer.id), path)).thenReturn(files.inputStream())
     `when`(fileService.collectionExists(eq(answer.id))).thenReturn(true)
-    `when`(fileService.writeCollectionTar(eq(answer.id))).thenReturn(out)
+    `when`(fileService.writeCollectionTar(eq(answer.id), path)).thenReturn(out)
     containerService.startIdeContainer(answer)
     containerService.saveAnswerFiles(answer)
     // verify(fileService, times(1)).writeCollectionTar(answer.id)
@@ -95,7 +101,8 @@ internal class ContainerServiceTest : SpringTest() {
 
   @Test
   fun `files are not overridden in existing IDE containers`() {
-    `when`(fileService.readCollectionTar(eq(answer.id))).thenReturn(files.inputStream())
+    val path = pathResolver.resolveAnswerPath(answer)
+    `when`(fileService.readCollectionTar(eq(answer.id), path)).thenReturn(files.inputStream())
     `when`(fileService.collectionExists(eq(answer.id))).thenReturn(true)
     containerService.startIdeContainer(answer)
     val containerId = getIdeContainer(answer).id()

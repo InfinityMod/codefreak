@@ -79,20 +79,30 @@ class JpaFileService : FileService {
 class HDDFileService : FileService {
   @Autowired
   private lateinit var fileCollectionRepository: FileCollectionRepository2
+  @Autowired
+  private lateinit var config: AppConfiguration
 
   fun saveOnDisk(byteArray: ByteArray, destination: PathResolver): ByteArray
   {
     val input: ArchiveInputStream = ArchiveStreamFactory().createArchiveInputStream(BufferedInputStream(ByteArrayInputStream(byteArray)))
     try {
       var entry: ArchiveEntry?
+
+      val permissions_folder =PosixFilePermissions.fromString(config.files.folderPermission)
+      val permissions_files = PosixFilePermissions.fromString(config.files.filePermission)
+
       while ((input.nextEntry.also { entry = it }) != null) {
         val file: File = File(destination.path.toString(), entry!!.name)
         if (entry!!.isDirectory) {
-          file.mkdirs()
+          Files.createDirectories(file.toPath(),  PosixFilePermissions.asFileAttribute(permissions_folder))
+          Files.setPosixFilePermissions(file.toPath(), permissions_folder)
         } else {
-          file.parentFile.mkdirs()
+          Files.createDirectories(file.parentFile.toPath(),  PosixFilePermissions.asFileAttribute(permissions_folder))
+          Files.setPosixFilePermissions(file.parentFile.toPath(), permissions_folder)
           IOUtils.copy(input, file)
+          Files.setPosixFilePermissions(file.toPath(), permissions_files);
         }
+
         //FileModeMapper.map(entry, file)
       }
     } finally {

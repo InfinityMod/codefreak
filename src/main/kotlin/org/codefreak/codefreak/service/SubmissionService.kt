@@ -10,6 +10,7 @@ import org.codefreak.codefreak.entity.User
 import org.codefreak.codefreak.repository.SubmissionRepository
 import org.codefreak.codefreak.service.evaluation.EvaluationService
 import org.codefreak.codefreak.service.file.FileService
+import org.codefreak.codefreak.service.file.PathResolver
 import org.codefreak.codefreak.util.TarUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -32,6 +33,9 @@ class SubmissionService : BaseService() {
 
   @Autowired
   private lateinit var assignmentService: AssignmentService
+
+  @Autowired
+  lateinit var pathResolver: PathResolver
 
   @Transactional
   fun findSubmission(id: UUID): Submission = submissionRepository.findById(id)
@@ -109,7 +113,8 @@ class SubmissionService : BaseService() {
       submission.answers.forEach { answer ->
         val answerPath = "$submissionPath/task-${answer.task.position}"
         TarUtil.mkdir(answerPath, outputArchive)
-        fileService.readCollectionTar(answer.id).use { answerFiles ->
+        val path = pathResolver.resolveAnswerPath(answer)
+        fileService.readCollectionTar(answer.id, path).use { answerFiles ->
           val source = TarArchiveInputStream(answerFiles)
           TarUtil.copyEntries(source, outputArchive, prefix = answerPath, filter = {
             // don't copy root directory of answer as we already created one

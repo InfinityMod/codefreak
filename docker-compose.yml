@@ -39,7 +39,7 @@ services:
   backend:
     depends_on:
       - postgres
-    image: gradle:jdk8
+    image: gradle:jdk11
     restart: always
     working_dir: /home/gradle/project
     networks:

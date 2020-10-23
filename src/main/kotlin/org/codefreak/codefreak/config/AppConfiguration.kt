@@ -131,10 +131,13 @@ class AppConfiguration {
     var systemRoot = "c:\\tmp\\admin\\"
     var taskPath = "assignments/{assignment_title}/{assignment_uuid}/{task_title}/{task_uuid}/"
 
+    var folderPermission = "rwxrwx---"
+    var filePermission = "rw-rw----"
+
     var hddUsage: List<HDDStorageUsage> =
         listOf(
             //HDDStorageUsage.Assignments,
-            HDDStorageUsage.Answers
+            //HDDStorageUsage.Answers
         )
 
     enum class FileAdapter {

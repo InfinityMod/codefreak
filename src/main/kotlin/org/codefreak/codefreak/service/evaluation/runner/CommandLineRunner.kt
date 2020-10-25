@@ -5,13 +5,14 @@ import org.codefreak.codefreak.entity.Feedback
 import org.codefreak.codefreak.service.ContainerService
 import org.codefreak.codefreak.service.ExecResult
 import org.codefreak.codefreak.service.evaluation.EvaluationRunner
+import org.fusesource.jansi.HtmlAnsiOutputStream
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Component
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.util.*
 import kotlin.text.Charsets.UTF_8
-import org.fusesource.jansi.HtmlAnsiOutputStream
 
 @Component
 class CommandLineRunner : EvaluationRunner {
@@ -36,7 +37,7 @@ class CommandLineRunner : EvaluationRunner {
   protected fun executionToFeedback(execution: Execution): Feedback {
     return Feedback(execution.command).apply {
       longDescription = if (execution.result.output.isNotBlank()) {
-        wrapInMarkdownHTMLCodeBlock(processColorCodes(execution.result.output.trim()))
+        wrapInMarkdownHTMLCodeBlock(processColorCodes(convertBase64(execution.result.output.trim())))
       } else null
       status = if (execution.result.exitCode == 0L) Feedback.Status.SUCCESS else Feedback.Status.FAILED
     }
@@ -68,5 +69,12 @@ class CommandLineRunner : EvaluationRunner {
     hos.write(text.toByteArray(UTF_8))
     hos.close()
     return String(os.toByteArray(), UTF_8)
+  }
+  protected fun convertBase64(txt: String): String {
+    if (!txt.startsWith("base64:", ignoreCase = false)){
+      return txt
+    }
+    val decodedBytes: ByteArray = Base64.getDecoder().decode(txt.substring(7))
+    return String(decodedBytes)
   }
 }

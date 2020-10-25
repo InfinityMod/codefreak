@@ -6,6 +6,7 @@ import javax.xml.bind.JAXBContext
 import javax.xml.bind.annotation.XmlElement
 import javax.xml.bind.annotation.XmlRootElement
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.lang3.StringEscapeUtils.unescapeXml
 import org.codefreak.codefreak.entity.Answer
 import org.codefreak.codefreak.entity.EvaluationStep
 import org.codefreak.codefreak.entity.Feedback
@@ -89,7 +90,7 @@ class JUnitRunner : CommandLineRunner() {
             else -> null
           }
           // Make jUnit output valid markdown (code block)
-          longDescription?.let { longDescription = wrapInMarkdownHTMLCodeBlock(processColorCodes(it)) }
+          longDescription?.let { longDescription = wrapInMarkdownHTMLCodeBlock(processColorCodes(unescapeXml(convertBase64(it)))) }
           status = when {
             testCase.isSkipped -> Feedback.Status.IGNORE
             testCase.isSuccessful -> Feedback.Status.SUCCESS

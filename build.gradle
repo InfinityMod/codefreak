@@ -25,6 +25,7 @@ project.autodiff.changeLogDiff = project.hasProperty('changeLogDiff')
 
 group = 'org.codefreak'
 sourceCompatibility = 11
+targetCompatibility = 11
 
 repositories {
   mavenCentral()

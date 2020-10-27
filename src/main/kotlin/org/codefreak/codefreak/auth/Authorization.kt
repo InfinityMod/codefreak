@@ -1,11 +1,14 @@
 package org.codefreak.codefreak.auth
 
+import org.codefreak.codefreak.entity.OAuth_User
+import org.codefreak.codefreak.entity.Oidc_User
 import org.codefreak.codefreak.entity.User
 import org.codefreak.codefreak.util.FrontendUtil
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 
-class Authorization(val currentUser: User = FrontendUtil.getCurrentUser()) {
+
+class Authorization(var currentUser: User = FrontendUtil.getCurrentUser()) {
 
   companion object {
     fun deny(): Nothing = throw AccessDeniedException("AccessDenied")
@@ -17,7 +20,7 @@ class Authorization(val currentUser: User = FrontendUtil.getCurrentUser()) {
     }
   }
 
-  fun isCurrentUser(user: User) = user == currentUser
+  fun isCurrentUser(user: User) = (user == currentUser)
 
   fun requireAuthorityIfNotCurrentUser(user: User, authority: String) {
     if (!isCurrentUser(user)) {

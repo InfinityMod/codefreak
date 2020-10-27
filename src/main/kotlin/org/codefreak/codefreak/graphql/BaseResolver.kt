@@ -5,9 +5,11 @@ import graphql.kickstart.servlet.context.GraphQLWebSocketContext
 import graphql.schema.DataFetchingEnvironment
 import org.codefreak.codefreak.auth.Authorization
 import org.codefreak.codefreak.auth.NotAuthenticatedException
+import org.codefreak.codefreak.entity.Oidc_User
 import org.codefreak.codefreak.entity.User
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
+import kotlin.reflect.full.isSubclassOf
 
 open class BaseResolver {
 
@@ -28,8 +30,10 @@ open class BaseResolver {
       if (userPrincipal !is Authentication) {
         throw NotAuthenticatedException()
       }
-      val user = userPrincipal.principal
-      if (user !is User) {
+      var user = userPrincipal.principal
+      if((user!!::class != User::class) && user!!::class.isSubclassOf(User::class)) {
+        user = (user as Oidc_User).user
+      }else if (user !is User) {
         throw NotAuthenticatedException()
       }
       Authorization(user)

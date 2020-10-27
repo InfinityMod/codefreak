@@ -65,24 +65,28 @@ open class User(private var username: String) : BaseEntity(), UserDetails, Crede
 class Oidc_User : User, OidcUser {
   @Transient
   private var oidcPrincipal: OidcUser
+  @Transient
+  public var user: User
 
   constructor(oidcPrincipal: OidcUser, userService: UserService) : super(Optional.ofNullable(oidcPrincipal.email).orElse(oidcPrincipal.name)) {
     this.oidcPrincipal = oidcPrincipal
-
-    val user = userService.getOrCreateUser(super.getUsername()) {
+    this.user = userService.getOrCreateUser(super.getUsername()) {
       val firstNames: MutableList<String?> = mutableListOf<String?>()
       val lastNames: MutableList<String?>  = mutableListOf<String?>()
 
-      if (oidcPrincipal.fullName.isNotEmpty()){
-        val nameSplit = oidcPrincipal.fullName.split(",");
-        if(nameSplit.size > 1)
-        {
-          firstNames.add(nameSplit.subList(1, nameSplit.size).joinToString(" "))
-          lastNames.add(nameSplit.getOrNull(0))
-        }else if (nameSplit.size == 1){
-          firstNames.add(nameSplit.getOrNull(0))
+
+      if (oidcPrincipal.fullName != null) {
+        if (oidcPrincipal.fullName!!.isNotEmpty()) {
+          val nameSplit = oidcPrincipal.fullName.split(",");
+          if (nameSplit.size > 1) {
+            firstNames.add(nameSplit.subList(1, nameSplit.size).joinToString(" "))
+            lastNames.add(nameSplit.getOrNull(0))
+          } else if (nameSplit.size == 1) {
+            firstNames.add(nameSplit.getOrNull(0))
+          }
         }
       }
+
       firstNames.add(oidcPrincipal?.givenName)
       lastNames.add(oidcPrincipal?.familyName)
 
@@ -94,8 +98,9 @@ class Oidc_User : User, OidcUser {
       this.lastName = lastNames.filterNotNull()[0]
       this.authMethod = AuthenticationMethod.OAUTH.name
     }
-    BeanUtils.copyProperties(user, this )
+    BeanUtils.copyProperties(this.user, this )
   }
+
 
   // OidcUser support
   override fun getName(): String {
@@ -121,17 +126,19 @@ class Oidc_User : User, OidcUser {
 class OAuth_User : User, OAuth2User {
   @Transient
   private var oauthPrincipal: OAuth2User
+  @Transient
+  public var user: User
 
   constructor(oauthPrincipal: OAuth2User, userService: UserService) : super(Optional.ofNullable(oauthPrincipal.getAttribute<String>("email")).orElse(oauthPrincipal.getAttribute<String>("nickname"))) {
     this.oauthPrincipal = oauthPrincipal
     val names = oauthPrincipal.getAttribute<String>("name")?.split(", ")
 
-    val user = userService.getOrCreateUser(super.getUsername()) {
+    this.user = userService.getOrCreateUser(super.getUsername()) {
       this.firstName  = names?.getOrNull(1) ?: "Unknown"
       this.lastName = names?.getOrNull(0) ?: "Unknown"
       this.authMethod = AuthenticationMethod.OAUTH.name
     }
-    BeanUtils.copyProperties(user, this)
+    BeanUtils.copyProperties(this.user, this)
   }
 
   // OidcUser support
@@ -141,4 +148,5 @@ class OAuth_User : User, OAuth2User {
   override fun getAttributes(): MutableMap<String, Any> {
     return this.oauthPrincipal.getAttributes()
   }
+
 }

@@ -89,8 +89,8 @@ class SecurityConfiguration : WebSecurityConfigurerAdapter() {
     @Throws(OAuth2AuthenticationException::class)
     override fun loadUser(userRequest: OidcUserRequest): OidcUser {
       val oidcUser: OidcUser = oidcUserService.loadUser(userRequest)
-      val user: Oidc_User = Oidc_User(oidcUser, simpleUserService)
-      user.roles.add(oAuthAuthoritySelector.getValue(user.getUsername()))
+      val user = Oidc_User(oidcUser, simpleUserService)
+      user.roles.add(oAuthAuthoritySelector.getValue(user.username))
       return user
     }
   }

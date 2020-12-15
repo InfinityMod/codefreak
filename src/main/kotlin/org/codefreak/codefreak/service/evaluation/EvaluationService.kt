@@ -26,6 +26,7 @@ import org.codefreak.codefreak.service.EntityNotFoundException
 import org.codefreak.codefreak.service.SubmissionService
 import org.codefreak.codefreak.service.evaluation.runner.CommentRunner
 import org.codefreak.codefreak.service.file.FileService
+import org.codefreak.codefreak.service.file.PathResolver
 import org.codefreak.codefreak.util.PositionUtil
 import org.codefreak.codefreak.util.orNull
 import org.slf4j.LoggerFactory
@@ -59,6 +60,9 @@ class EvaluationService : BaseService() {
 
   @Autowired
   private lateinit var runners: List<EvaluationRunner>
+
+  @Autowired
+  lateinit var pathResolver: PathResolver
 
   @Autowired
   private lateinit var evaluationStepDefinitionRepository: EvaluationStepDefinitionRepository
@@ -121,7 +125,8 @@ class EvaluationService : BaseService() {
   }
 
   fun createEvaluation(answer: Answer): Evaluation {
-    return evaluationRepository.save(Evaluation(answer, fileService.getCollectionMd5Digest(answer.id), answer.task.evaluationSettingsChangedAt))
+    val path: PathResolver? = pathResolver.resolveAnswerPath(answer)
+    return evaluationRepository.save(Evaluation(answer, fileService.getCollectionMd5Digest(answer.id, path), answer.task.evaluationSettingsChangedAt))
   }
 
   fun createCommentFeedback(author: User, comment: String): Feedback {
@@ -159,7 +164,8 @@ class EvaluationService : BaseService() {
       return false
     }
     // check if evaluation has been run for latest file state
-    if (!evaluation.filesDigest.contentEquals(fileService.getCollectionMd5Digest(answer.id))) {
+    val path: PathResolver? = pathResolver.resolveAnswerPath(answer)
+    if (!evaluation.filesDigest.contentEquals(fileService.getCollectionMd5Digest(answer.id, path))) {
       return false
     }
     // check if all evaluation steps have been run
